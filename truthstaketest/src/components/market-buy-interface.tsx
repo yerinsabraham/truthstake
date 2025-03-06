@@ -5,7 +5,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useSendAndConfirmTransaction } from "thirdweb/react";
+import { useSendAndConfirmTransaction, useActiveAccount } from "thirdweb/react";
 import { contract } from "@/constants/contract";
 import { prepareContractCall } from "thirdweb";
 import { toast } from "sonner";
@@ -26,6 +26,7 @@ export function MarketBuyInterface({ marketId, market }: MarketBuyInterfaceProps
   const [stakeAmount, setStakeAmount] = useState("");
   const [selectedOption, setSelectedOption] = useState<"A" | "B" | null>(null);
   const { mutateAsync: sendTransaction } = useSendAndConfirmTransaction();
+  const account = useActiveAccount();
 
   const handleButtonClick = (option: "A" | "B") => {
     setSelectedOption(option);
@@ -39,6 +40,10 @@ export function MarketBuyInterface({ marketId, market }: MarketBuyInterfaceProps
   };
 
   const handleStake = async () => {
+    if (!account) {
+      toast.error("Please connect your wallet to stake");
+      return;
+    }
     if (!stakeAmount || isNaN(Number(stakeAmount)) || Number(stakeAmount) <= 0) {
       toast.error("Please enter a valid stake amount");
       return;
@@ -59,10 +64,9 @@ export function MarketBuyInterface({ marketId, market }: MarketBuyInterfaceProps
     }
   };
 
-  // Calculate potential winnings
   const totalStakeA = Number(market.totalOptionAStake) / 10 ** 18;
   const totalStakeB = Number(market.totalOptionBStake) / 10 ** 18;
-  const totalStake = totalStakeA + totalStakeB || 1; // Avoid division by zero
+  const totalStake = totalStakeA + totalStakeB || 1;
   const stakeNum = Number(stakeAmount) || 0;
   const potentialWinnings =
     selectedOption === "A"
@@ -77,10 +81,10 @@ export function MarketBuyInterface({ marketId, market }: MarketBuyInterfaceProps
     <div className="space-y-4">
       {!showInput ? (
         <div className="flex justify-between gap-4">
-          <Button className="flex-1" onClick={() => handleButtonClick("A")}>
+          <Button className="flex-1" onClick={() => handleButtonClick("A")} disabled={!account}>
             {market.optionA}
           </Button>
-          <Button className="flex-1" onClick={() => handleButtonClick("B")}>
+          <Button className="flex-1" onClick={() => handleButtonClick("B")} disabled={!account}>
             {market.optionB}
           </Button>
         </div>
