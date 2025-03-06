@@ -1,7 +1,7 @@
 // src/components/banner-upload-modal.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,10 +13,18 @@ import { contract } from "@/constants/contract";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { put } from "@vercel/blob";
+import { readContract } from "thirdweb";
 
+// Props for BannerUploadModal
 interface BannerUploadModalProps {
   onClose: () => void;
   onUpload?: (imageUrl: string, marketId: number, title: string) => void;
+}
+
+// Market info type
+interface MarketInfo {
+  id: number;
+  question: string;
 }
 
 export function BannerUploadModal({ onClose, onUpload }: BannerUploadModalProps) {
@@ -25,6 +33,7 @@ export function BannerUploadModal({ onClose, onUpload }: BannerUploadModalProps)
   const [title, setTitle] = useState("");
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
+  const [markets, setMarkets] = useState<MarketInfo[]>([]);
 
   const { data: marketCount } = useReadContract({
     contract,
@@ -32,14 +41,22 @@ export function BannerUploadModal({ onClose, onUpload }: BannerUploadModalProps)
     params: [],
   });
 
-  const markets = Array.from({ length: Number(marketCount || 0) }, (_, i) => {
-    const { data } = useReadContract({
-      contract,
-      method: "function getMarketInfo(uint256 _marketId) view returns (string question, string optionA, string optionB, uint256 endTime, uint8 outcome, uint256 totalOptionAStake, uint256 totalOptionBStake, bool resolved)",
-      params: [BigInt(i)],
-    });
-    return { id: i, question: data?.[0] || `Market ${i}` };
-  });
+  useEffect(() => {
+    const fetchMarkets = async () => {
+      if (!marketCount) return;
+      const marketData: MarketInfo[] = [];
+      for (let i = 0; i < Number(marketCount); i++) {
+        const data = await readContract({
+          contract,
+          method: "function getMarketInfo(uint256 _marketId) view returns (string question, string optionA, string optionB, uint256 endTime, uint8 outcome, uint256 totalOptionAStake, uint256 totalOptionBStake, bool resolved)",
+          params: [BigInt(i)],
+        });
+        marketData.push({ id: i, question: data[0] || `Market ${i}` });
+      }
+      setMarkets(marketData);
+    };
+    fetchMarkets();
+  }, [marketCount]);
 
   const filteredMarkets = markets.filter(m => m.question.toLowerCase().includes(search.toLowerCase()));
 
@@ -87,7 +104,11 @@ export function BannerUploadModal({ onClose, onUpload }: BannerUploadModalProps)
               </PopoverTrigger>
               <PopoverContent className="w-[300px] p-0">
                 <Command>
-                  <CommandInput placeholder="Search markets..." value={search} onValueChange={setSearch} />
+                  <CommandInput
+                    placeholder="Search markets..."
+                    value={search}
+                    onValueChange={setSearch}
+                  />
                   <CommandList>
                     <CommandEmpty>No markets found.</CommandEmpty>
                     <CommandGroup>
