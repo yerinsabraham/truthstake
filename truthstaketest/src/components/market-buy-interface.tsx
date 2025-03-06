@@ -59,18 +59,16 @@ export function MarketBuyInterface({ marketId, market }: MarketBuyInterfaceProps
     }
   };
 
-  // Calculate odds and potential winnings
+  // Calculate potential winnings
   const totalStakeA = Number(market.totalOptionAStake) / 10 ** 18;
   const totalStakeB = Number(market.totalOptionBStake) / 10 ** 18;
   const totalStake = totalStakeA + totalStakeB || 1; // Avoid division by zero
-  const oddsA = totalStakeA / totalStake;
-  const oddsB = totalStakeB / totalStake;
   const stakeNum = Number(stakeAmount) || 0;
   const potentialWinnings =
     selectedOption === "A"
       ? totalStakeB > 0
         ? stakeNum * (totalStake / totalStakeB)
-        : stakeNum // If no opposing stake, return input amount
+        : stakeNum
       : totalStakeA > 0
       ? stakeNum * (totalStake / totalStakeA)
       : stakeNum;
