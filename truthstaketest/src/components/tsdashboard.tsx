@@ -10,7 +10,7 @@ import { MarketCardSkeleton } from "./market-card-skeleton";
 import { Footer } from "./footer";
 import { useState, useEffect, useRef } from "react";
 import { readContract } from "thirdweb";
-import { list } from "@vercel/blob"; // Already imported
+import { list } from "@vercel/blob";
 
 const marketCategories = [
   { marketId: 0, category: "Pop Culture" },
@@ -42,11 +42,12 @@ export function TruthStakeDashboard() {
       try {
         const { blobs } = await list({
           prefix: "banner_",
-          token: "vercel_blob_rw_7uCpedk8uHSlW1Qx_dcwT0MT5tlQ1c9CQxapv3ElBDJgpLd", // Hardcoded token
-        }); // Fetch all banners
+          token: "vercel_blob_rw_7uCpedk8uHSlW1Qx_dcwT0MT5tlQ1c9CQxapv3ElBDJgpLd",
+        });
+        console.log("Fetched blobs:", blobs); // Debug: Log raw Blob response
         const bannerData = blobs.map(blob => {
           const filenameParts = blob.pathname.split("_");
-          const id = parseInt(filenameParts[1].split(".")[0], 10); // Extract timestamp ID
+          const id = parseInt(filenameParts[1].split(".")[0], 10);
           return {
             id,
             imageUrl: blob.url,
@@ -54,6 +55,7 @@ export function TruthStakeDashboard() {
             title: "Banner " + id, // Placeholder—needs real title
           };
         });
+        console.log("Mapped banners:", bannerData); // Debug: Log processed banners
         setBanners(bannerData);
       } catch (error) {
         console.error("Failed to fetch banners from Vercel Blob:", error);
