@@ -14,15 +14,13 @@ import { Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { put } from "@vercel/blob";
 import { readContract } from "thirdweb";
-import { toast } from "sonner"; // Added import for toast
+import { toast } from "sonner";
 
-// Props for BannerUploadModal
 interface BannerUploadModalProps {
   onClose: () => void;
   onUpload?: (imageUrl: string, marketId: number, title: string) => void;
 }
 
-// Market info type
 interface MarketInfo {
   id: number;
   question: string;
@@ -83,9 +81,9 @@ export function BannerUploadModal({ onClose, onUpload }: BannerUploadModalProps)
       setTitle("");
       setSearch("");
       onClose();
-    } catch (error) {
-      console.error("Banner upload failed:", error);
-      toast.error("Failed to upload banner—check console for details");
+    } catch (error: any) {
+      console.error("Banner upload failed:", error.message, error.stack);
+      toast.error(`Failed to upload banner: ${error.message || "Unknown error"}`);
     }
   };
 
