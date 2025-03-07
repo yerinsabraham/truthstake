@@ -14,6 +14,7 @@ import { Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { put } from "@vercel/blob";
 import { readContract } from "thirdweb";
+import { toast } from "sonner"; // Added import for toast
 
 // Props for BannerUploadModal
 interface BannerUploadModalProps {
@@ -68,18 +69,24 @@ export function BannerUploadModal({ onClose, onUpload }: BannerUploadModalProps)
 
   const handleSubmit = async () => {
     if (!image || !marketId || !title) {
-      console.log("Please upload an image, select a market, and enter a title");
+      toast.error("Please upload an image, select a market, and enter a title");
       return;
     }
-    const id = Date.now();
-    const filename = `banner_${id}.png`;
-    const { url } = await put(filename, image, { access: "public" });
-    onUpload?.(url, Number(marketId), title);
-    setImage(null);
-    setMarketId("");
-    setTitle("");
-    setSearch("");
-    onClose();
+    try {
+      const id = Date.now();
+      const filename = `banner_${id}.png`;
+      const { url } = await put(filename, image, { access: "public" });
+      onUpload?.(url, Number(marketId), title);
+      toast.success("Banner uploaded successfully");
+      setImage(null);
+      setMarketId("");
+      setTitle("");
+      setSearch("");
+      onClose();
+    } catch (error) {
+      console.error("Banner upload failed:", error);
+      toast.error("Failed to upload banner—check console for details");
+    }
   };
 
   return (
