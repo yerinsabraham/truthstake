@@ -73,7 +73,10 @@ export function BannerUploadModal({ onClose, onUpload }: BannerUploadModalProps)
     try {
       const id = Date.now();
       const filename = `banner_${id}.png`;
-      const { url } = await put(filename, image, { access: "public" });
+      const { url } = await put(filename, image, {
+        access: "public",
+        token: "vercel_blob_rw_7uCpedk8uHSlW1Qx_dcwT0MT5tlQ1c9CQxapv3ElBDJgpLd", // Hardcoded token
+      });
       onUpload?.(url, Number(marketId), title);
       toast.success("Banner uploaded successfully");
       setImage(null);
@@ -81,8 +84,7 @@ export function BannerUploadModal({ onClose, onUpload }: BannerUploadModalProps)
       setTitle("");
       setSearch("");
       onClose();
-    } catch (error: unknown) { // Changed to 'unknown'
-      // Handle the unknown error type safely
+    } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       console.error("Banner upload failed:", errorMessage);
       toast.error(`Failed to upload banner: ${errorMessage || "Unknown error"}`);
