@@ -81,9 +81,11 @@ export function BannerUploadModal({ onClose, onUpload }: BannerUploadModalProps)
       setTitle("");
       setSearch("");
       onClose();
-    } catch (error: any) {
-      console.error("Banner upload failed:", error.message, error.stack);
-      toast.error(`Failed to upload banner: ${error.message || "Unknown error"}`);
+    } catch (error: unknown) { // Changed to 'unknown'
+      // Handle the unknown error type safely
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error("Banner upload failed:", errorMessage);
+      toast.error(`Failed to upload banner: ${errorMessage || "Unknown error"}`);
     }
   };
 
