@@ -10,6 +10,7 @@ import { MarketCardSkeleton } from "./market-card-skeleton";
 import { Footer } from "./footer";
 import { useState, useEffect, useRef } from "react";
 import { readContract } from "thirdweb";
+import { list } from "@vercel/blob"; // Already imported
 
 const marketCategories = [
   { marketId: 0, category: "Pop Culture" },
@@ -35,22 +36,31 @@ export function TruthStakeDashboard() {
   const [markets, setMarkets] = useState<MarketInfo[]>([]);
   const marketRefs = useRef<Map<number, HTMLDivElement>>(new Map());
 
-  // Load banners from localStorage
+  // Fetch banners from Vercel Blob on mount
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const savedBanners = localStorage.getItem("truthstakeBanners");
-      if (savedBanners) {
-        setBanners(JSON.parse(savedBanners));
+    const fetchBanners = async () => {
+      try {
+        const { blobs } = await list({
+          prefix: "banner_",
+          token: "vercel_blob_rw_7uCpedk8uHSlW1Qx_dcwT0MT5tlQ1c9CQxapv3ElBDJgpLd", // Hardcoded token
+        }); // Fetch all banners
+        const bannerData = blobs.map(blob => {
+          const filenameParts = blob.pathname.split("_");
+          const id = parseInt(filenameParts[1].split(".")[0], 10); // Extract timestamp ID
+          return {
+            id,
+            imageUrl: blob.url,
+            marketId: 0, // Placeholder—needs contract or metadata
+            title: "Banner " + id, // Placeholder—needs real title
+          };
+        });
+        setBanners(bannerData);
+      } catch (error) {
+        console.error("Failed to fetch banners from Vercel Blob:", error);
       }
-    }
+    };
+    fetchBanners();
   }, []);
-
-  // Save banners to localStorage
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem("truthstakeBanners", JSON.stringify(banners));
-    }
-  }, [banners]);
 
   // Fetch all market info
   useEffect(() => {
@@ -108,7 +118,7 @@ export function TruthStakeDashboard() {
   const handleBannerUpload = (imageUrl: string, marketId: number, title: string) => {
     setBanners(prev => {
       const id = Date.now();
-      const newBanner = { id, imageUrl, marketId, title }; // Use Vercel Blob URL
+      const newBanner = { id, imageUrl, marketId, title };
       if (prev.length < 4) return [newBanner, ...prev];
       return [newBanner, ...prev.slice(0, 3)];
     });
