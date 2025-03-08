@@ -10,7 +10,6 @@ import { MarketCardSkeleton } from "./market-card-skeleton";
 import { Footer } from "./footer";
 import { useState, useEffect, useRef } from "react";
 import { readContract } from "thirdweb";
-import { list } from "@vercel/blob";
 
 const marketCategories = [
   { marketId: 0, category: "Pop Culture" },
@@ -23,6 +22,13 @@ interface MarketInfo {
   resolved: boolean;
 }
 
+interface Banner {
+  id: number;
+  imageUrl: string;
+  marketId: number;
+  title: string;
+}
+
 export function TruthStakeDashboard() {
   const { data: marketCount, isLoading: isLoadingMarketCount } = useReadContract({
     contract,
@@ -32,35 +38,22 @@ export function TruthStakeDashboard() {
   const account = useActiveAccount();
 
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [banners, setBanners] = useState<{ id: number; imageUrl: string; marketId: number; title: string }[]>([]);
+  const [banners, setBanners] = useState<Banner[]>([]);
   const [markets, setMarkets] = useState<MarketInfo[]>([]);
   const marketRefs = useRef<Map<number, HTMLDivElement>>(new Map());
 
-  // Fetch banners from Vercel Blob on mount
+  // Fetch banners from API route on mount
   useEffect(() => {
     const fetchBanners = async () => {
-      console.log("Fetching banners from Vercel Blob...");
+      console.log("Fetching banners from API...");
       try {
-        const { blobs } = await list({
-          prefix: "banner_",
-          token: "vercel_blob_rw_7uCpedk8uHSlW1Qx_dcwT0MT5tlQ1c9CQxapv3ElBDJgpLd",
-        });
-        console.log("Fetched blobs:", JSON.stringify(blobs, null, 2)); // Detailed log
-        const bannerData = blobs.map(blob => {
-          const filenameParts = blob.pathname.split("_");
-          const id = parseInt(filenameParts[1].split(".")[0], 10);
-          const banner = {
-            id,
-            imageUrl: blob.url,
-            marketId: 0, // Placeholder—needs contract or metadata
-            title: "Banner " + id, // Placeholder—needs real title
-          };
-          return banner;
-        });
-        console.log("Mapped banners:", JSON.stringify(bannerData, null, 2)); // Detailed log
+        const response = await fetch("/api/banners");
+        if (!response.ok) throw new Error("API fetch failed: " + response.statusText);
+        const bannerData: Banner[] = await response.json();
+        console.log("Fetched banners from API:", JSON.stringify(bannerData, null, 2));
         setBanners(bannerData);
       } catch (error) {
-        console.error("Failed to fetch banners from Vercel Blob:", error instanceof Error ? error.message : String(error));
+        console.error("Failed to fetch banners:", error instanceof Error ? error.message : String(error));
       }
     };
     fetchBanners();
@@ -124,29 +117,17 @@ export function TruthStakeDashboard() {
       const id = Date.now();
       const newBanner = { id, imageUrl, marketId, title };
       const updatedBanners = prev.length < 4 ? [newBanner, ...prev] : [newBanner, ...prev.slice(0, 3)];
-      console.log("Updated banners after upload:", JSON.stringify(updatedBanners, null, 2)); // Debug log
+      console.log("Updated banners after upload:", JSON.stringify(updatedBanners, null, 2));
       return updatedBanners;
     });
-    // Fetch banners again to sync with Blob storage
+    // Re-fetch banners from API after upload
     const fetchBanners = async () => {
       console.log("Re-fetching banners after upload...");
       try {
-        const { blobs } = await list({
-          prefix: "banner_",
-          token: "vercel_blob_rw_7uCpedk8uHSlW1Qx_dcwT0MT5tlQ1c9CQxapv3ElBDJgpLd",
-        });
-        console.log("Fetched blobs after upload:", JSON.stringify(blobs, null, 2));
-        const bannerData = blobs.map(blob => {
-          const filenameParts = blob.pathname.split("_");
-          const id = parseInt(filenameParts[1].split(".")[0], 10);
-          return {
-            id,
-            imageUrl: blob.url,
-            marketId: 0,
-            title: "Banner " + id,
-          };
-        });
-        console.log("Mapped banners after upload:", JSON.stringify(bannerData, null, 2));
+        const response = await fetch("/api/banners");
+        if (!response.ok) throw new Error("API fetch failed: " + response.statusText);
+        const bannerData: Banner[] = await response.json();
+        console.log("Fetched banners after upload:", JSON.stringify(bannerData, null, 2));
         setBanners(bannerData);
       } catch (error) {
         console.error("Failed to re-fetch banners:", error instanceof Error ? error.message : String(error));
