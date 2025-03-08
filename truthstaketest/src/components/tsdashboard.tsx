@@ -39,26 +39,28 @@ export function TruthStakeDashboard() {
   // Fetch banners from Vercel Blob on mount
   useEffect(() => {
     const fetchBanners = async () => {
+      console.log("Fetching banners from Vercel Blob...");
       try {
         const { blobs } = await list({
           prefix: "banner_",
           token: "vercel_blob_rw_7uCpedk8uHSlW1Qx_dcwT0MT5tlQ1c9CQxapv3ElBDJgpLd",
         });
-        console.log("Fetched blobs:", blobs); // Debug: Log raw Blob response
+        console.log("Fetched blobs:", JSON.stringify(blobs, null, 2)); // Detailed log
         const bannerData = blobs.map(blob => {
           const filenameParts = blob.pathname.split("_");
           const id = parseInt(filenameParts[1].split(".")[0], 10);
-          return {
+          const banner = {
             id,
             imageUrl: blob.url,
             marketId: 0, // Placeholder—needs contract or metadata
             title: "Banner " + id, // Placeholder—needs real title
           };
+          return banner;
         });
-        console.log("Mapped banners:", bannerData); // Debug: Log processed banners
+        console.log("Mapped banners:", JSON.stringify(bannerData, null, 2)); // Detailed log
         setBanners(bannerData);
       } catch (error) {
-        console.error("Failed to fetch banners from Vercel Blob:", error);
+        console.error("Failed to fetch banners from Vercel Blob:", error instanceof Error ? error.message : String(error));
       }
     };
     fetchBanners();
@@ -121,9 +123,36 @@ export function TruthStakeDashboard() {
     setBanners(prev => {
       const id = Date.now();
       const newBanner = { id, imageUrl, marketId, title };
-      if (prev.length < 4) return [newBanner, ...prev];
-      return [newBanner, ...prev.slice(0, 3)];
+      const updatedBanners = prev.length < 4 ? [newBanner, ...prev] : [newBanner, ...prev.slice(0, 3)];
+      console.log("Updated banners after upload:", JSON.stringify(updatedBanners, null, 2)); // Debug log
+      return updatedBanners;
     });
+    // Fetch banners again to sync with Blob storage
+    const fetchBanners = async () => {
+      console.log("Re-fetching banners after upload...");
+      try {
+        const { blobs } = await list({
+          prefix: "banner_",
+          token: "vercel_blob_rw_7uCpedk8uHSlW1Qx_dcwT0MT5tlQ1c9CQxapv3ElBDJgpLd",
+        });
+        console.log("Fetched blobs after upload:", JSON.stringify(blobs, null, 2));
+        const bannerData = blobs.map(blob => {
+          const filenameParts = blob.pathname.split("_");
+          const id = parseInt(filenameParts[1].split(".")[0], 10);
+          return {
+            id,
+            imageUrl: blob.url,
+            marketId: 0,
+            title: "Banner " + id,
+          };
+        });
+        console.log("Mapped banners after upload:", JSON.stringify(bannerData, null, 2));
+        setBanners(bannerData);
+      } catch (error) {
+        console.error("Failed to re-fetch banners:", error instanceof Error ? error.message : String(error));
+      }
+    };
+    fetchBanners();
   };
 
   const handleDeleteBanner = (marketId: number) => {
